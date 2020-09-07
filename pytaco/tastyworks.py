@@ -68,9 +68,9 @@ class TWAccount:
 
         self.account_size = self.data[self.data['Description']=='Wire Funds Received']['Value'].sum().squeeze()
 
-        self._to_trades()
-        self._link_by_strategy()
-        self._strategy_calculations()
+        self.trades = self._to_trades()
+        self.trades = self._link_by_strategy()
+        self.strategies = self._strategy_calculations()
 
 
     def _to_trades(self):
@@ -121,7 +121,7 @@ class TWAccount:
                             .reset_index()\
                             .sort_values(by=['Date', 'Open or Close', 'Strike Price'])
         
-        self.trades = trades
+        return trades
 
     def _add_action(self, row, positions, strategies, id):
         st = strategies.copy()
@@ -192,7 +192,7 @@ class TWAccount:
 
         actions = [a for a in strategy_actions.values()]
         actions = [y for x in actions for y in x ] #flattened
-        self.trades = pd.DataFrame.from_records(actions, columns=Action._fields).sort_values(by=['strategy_id', 'date', 'open_close', 'strike'])
+        return pd.DataFrame.from_records(actions, columns=Action._fields).sort_values(by=['strategy_id', 'date', 'open_close', 'strike'])
 
 
     def _strategy_pattern(self, legs, dte):
@@ -319,4 +319,4 @@ class TWAccount:
             strategies['max_loss_pct'] = strategies['max_loss'] / self.account_size
             strategies['comfee_value'] = (strategies['commissions'] + strategies['fees']) / strategies['value']
 
-            self.strategies = strategies
+            return strategies
