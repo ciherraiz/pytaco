@@ -322,7 +322,7 @@ class TWAccount:
     def closed_strategies(self):
         closed = self.strategies[self.strategies['strategy_state']=='CLOSED'].copy()
         closed['close_date'] = closed['close_datetime'].dt.tz_convert(tz=None) # remove tz info
-        closed['date_grp_w'] = closed['close_date'].dt.year.astype(str) + ' ' + closed['close_date'].dt.isocalendar().week.astype(str)
+        closed['date_grp_w'] = closed['close_date'].dt.year.astype(str) + ' ' + closed['close_date'].dt.week.astype(str)
         closed['close_date'] = closed['close_date'].dt.date # I can convert it because there aren't NA values
         return closed
 
@@ -334,13 +334,13 @@ class TWAccount:
         idx = pd.date_range(start=min_date, end=max_date, normalize=True) # Daily index
         closed_d=closed.copy().reset_index().set_index(['close_date']) # Set the date as index
         closed_d = pd.merge(idx.to_series(name='date_idx'),closed_d, how='left', left_index=True, right_index=True)
-        closed_d['date_grp_w'] = closed_d['date_idx'].dt.year.astype(str) + ' ' + closed_d['date_idx'].dt.isocalendar().week.astype(str).str.pad(2,fillchar='0')
+        closed_d['date_grp_w'] = closed_d['date_idx'].dt.year.astype(str) + ' ' + closed_d['date_idx'].dt.week.astype(str).str.pad(2,fillchar='0')
         return closed_d
 
     def open_strategies(self):
         open = self.strategies[self.strategies['strategy_state']=='OPEN'].copy()
         open['date_grp_m'] = open['expiration_date'].dt.year.astype(str) + ' ' + open['expiration_date'].dt.month.astype(str).str.pad(2,fillchar='0')
-        open['date_grp_w'] = open['expiration_date'].dt.year.astype(str) + ' ' + open['expiration_date'].dt.isocalendar().week.astype(str).str.pad(2,fillchar='0')
+        open['date_grp_w'] = open['expiration_date'].dt.year.astype(str) + ' ' + open['expiration_date'].dt.week.astype(str).str.pad(2,fillchar='0')
         return open
 
 
