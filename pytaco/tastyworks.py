@@ -66,6 +66,8 @@ class TWAccount:
         self.data['Date'] = pd.to_datetime(self.data['Date'], utc=True)
         self.data['Expiration Date'] = pd.to_datetime(self.data['Expiration Date'])
 
+        self.account_size = self.data[self.data['Description']=='Wire Funds Received']['Value'].sum().squeeze()
+
         self._to_trades()
         self._link_by_strategy()
         self._strategy_calculations()
@@ -277,10 +279,44 @@ class TWAccount:
             name = self._strategy_pattern(open_legs, dte)
             max_loss, max_profit, limit = self._strategy_measures(name, open_legs)
             self.trades.loc[strategy_trades.index.values, 'strategy_name'] = name
-            self.trades.loc[strategy_trades.index.values, 'max_loss'] = max_loss
-            self.trades.loc[strategy_trades.index.values, 'max_profit'] = max_profit
-            self.trades.loc[strategy_trades.index.values, 'dte'] = dte
-            self.trades.loc[strategy_trades.index.values, 'strategy_type'] = strategy_type
-            self.trades.loc[strategy_trades.index.values, 'strategy_state'] = 'CLOSED' if strategy_closed else 'OPEN'
-            self.trades.loc[strategy_trades.index.values, 'direction'] = STRATEGIES[name]['direction']
-            self.trades.loc[strategy_trades.index.values, 'limit'] = limit
+
+            strategies = self.trades.copy()
+
+            strategies.loc[strategy_trades.index.values, 'max_loss'] = max_loss
+            strategies.loc[strategy_trades.index.values, 'max_profit'] = max_profit
+            strategies.loc[strategy_trades.index.values, 'dte'] = dte
+            strategies.loc[strategy_trades.index.values, 'strategy_type'] = strategy_type
+            strategies.loc[strategy_trades.index.values, 'strategy_state'] = 'CLOSED' if strategy_closed else 'OPEN'
+            strategies.loc[strategy_trades.index.values, 'direction'] = STRATEGIES[name]['direction']
+            strategies.loc[strategy_trades.index.values, 'limit'] = limit
+
+            strategies = strategies.groupby(['strategy_id',
+                             'strategy_name',
+                             'underlying',
+                             'strategy_state']).agg(open_datetime=('date', np.min),
+                                                    close_datetime=('date', np.max),
+                                                    quantity=('quantity', np.max),
+                                                    expiration_date=('expiration', np.max),
+                                                    value=('value', np.sum),
+                                                    commissions=('commissions', np.sum),
+                                                    fees=('fees', np.sum),
+                                                    max_profit=('max_profit', np.max),
+                                                    max_loss=('max_loss', np.max),
+                                                    dte=('dte', np.max),
+                                                    strategy_type=('strategy_type', np.max),
+                                                    direction=('direction', np.max),
+                                                    limit=('limit', np.max))
+
+            strategies['result'] = strategies['value'] + strategies['commissions'] + strategies['fees']
+            strategies['result_position'] = strategies['result'] / strategies['quantity']
+
+            strategies['days'] = (strategies['close_datetime'] - strategies['open_datetime']).dt.days + 1
+            strategies['result_day_position'] = strategies['result'] / strategies['days'] / strategies['quantity']
+
+            strategies['max_profit_dte_position'] = strategies['max_profit'] / strategies['dte'] / strategies['quantity']
+            strategies['max_profit_day_position'] = strategies['max_profit'] / strategies['days'] / strategies['quantity']
+            strategies['max_loss_max_profit'] = strategies['max_loss'] / strategies['max_profit']
+            strategies['max_loss_pct'] = strategies['max_loss'] / self.account_size
+            strategies['comfee_value'] = (strategies['commissions'] + strategies['fees']) / strategies['value']
+
+            self.strategies = strategies
