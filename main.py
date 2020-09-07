@@ -1,5 +1,14 @@
-#from tastyworks.tastyworks import TWAccount
-import tastyworks
+import datetime
+from pathlib import Path
+from pytaco.tastyworks import TWAccount
 
-tw = TWAccount()
+FILE_NAME = 'data/tw.csv'
+
+f = Path.cwd().joinpath(FILE_NAME)
+
+if f.exists():
+    tw = TWAccount(f)
+else:
+    print("The file doesn't exist")
+
 
