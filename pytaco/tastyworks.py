@@ -245,7 +245,7 @@ class TWAccount:
         return max_loss, max_profit, limit
 
     def _strategy_calculations(self):
-        
+        strategies = self.trades.copy()       
         for _, strategy_trades in self.trades.groupby(['strategy_id']):
             open_legs = []
             strategy_closed = False
@@ -278,10 +278,8 @@ class TWAccount:
 
             name = self._strategy_pattern(open_legs, dte)
             max_loss, max_profit, limit = self._strategy_measures(name, open_legs)
-            self.trades.loc[strategy_trades.index.values, 'strategy_name'] = name
-
-            strategies = self.trades.copy()
-
+            
+            strategies.loc[strategy_trades.index.values, 'strategy_name'] = name
             strategies.loc[strategy_trades.index.values, 'max_loss'] = max_loss
             strategies.loc[strategy_trades.index.values, 'max_profit'] = max_profit
             strategies.loc[strategy_trades.index.values, 'dte'] = dte
@@ -290,33 +288,33 @@ class TWAccount:
             strategies.loc[strategy_trades.index.values, 'direction'] = STRATEGIES[name]['direction']
             strategies.loc[strategy_trades.index.values, 'limit'] = limit
 
-            strategies = strategies.groupby(['strategy_id',
-                             'strategy_name',
-                             'underlying',
-                             'strategy_state']).agg(open_datetime=('date', np.min),
-                                                    close_datetime=('date', np.max),
-                                                    quantity=('quantity', np.max),
-                                                    expiration_date=('expiration', np.max),
-                                                    value=('value', np.sum),
-                                                    commissions=('commissions', np.sum),
-                                                    fees=('fees', np.sum),
-                                                    max_profit=('max_profit', np.max),
-                                                    max_loss=('max_loss', np.max),
-                                                    dte=('dte', np.max),
-                                                    strategy_type=('strategy_type', np.max),
-                                                    direction=('direction', np.max),
-                                                    limit=('limit', np.max))
+        strategies = strategies.groupby(['strategy_id',
+                            'strategy_name',
+                            'underlying',
+                            'strategy_state']).agg(open_datetime=('date', np.min),
+                                                close_datetime=('date', np.max),
+                                                quantity=('quantity', np.max),
+                                                expiration_date=('expiration', np.max),
+                                                value=('value', np.sum),
+                                                commissions=('commissions', np.sum),
+                                                fees=('fees', np.sum),
+                                                max_profit=('max_profit', np.max),
+                                                max_loss=('max_loss', np.max),
+                                                dte=('dte', np.max),
+                                                strategy_type=('strategy_type', np.max),
+                                                direction=('direction', np.max),
+                                                limit=('limit', np.max))
 
-            strategies['result'] = strategies['value'] + strategies['commissions'] + strategies['fees']
-            strategies['result_position'] = strategies['result'] / strategies['quantity']
+        strategies['result'] = strategies['value'] + strategies['commissions'] + strategies['fees']
+        strategies['result_position'] = strategies['result'] / strategies['quantity']
 
-            strategies['days'] = (strategies['close_datetime'] - strategies['open_datetime']).dt.days + 1
-            strategies['result_day_position'] = strategies['result'] / strategies['days'] / strategies['quantity']
+        strategies['days'] = (strategies['close_datetime'] - strategies['open_datetime']).dt.days + 1
+        strategies['result_day_position'] = strategies['result'] / strategies['days'] / strategies['quantity']
 
-            strategies['max_profit_dte_position'] = strategies['max_profit'] / strategies['dte'] / strategies['quantity']
-            strategies['max_profit_day_position'] = strategies['max_profit'] / strategies['days'] / strategies['quantity']
-            strategies['max_loss_max_profit'] = strategies['max_loss'] / strategies['max_profit']
-            strategies['max_loss_pct'] = strategies['max_loss'] / self.account_size
-            strategies['comfee_value'] = (strategies['commissions'] + strategies['fees']) / strategies['value']
+        strategies['max_profit_dte_position'] = strategies['max_profit'] / strategies['dte'] / strategies['quantity']
+        strategies['max_profit_day_position'] = strategies['max_profit'] / strategies['days'] / strategies['quantity']
+        strategies['max_loss_max_profit'] = strategies['max_loss'] / strategies['max_profit']
+        strategies['max_loss_pct'] = strategies['max_loss'] / self.account_size
+        strategies['comfee_value'] = (strategies['commissions'] + strategies['fees']) / strategies['value']
 
-            return strategies
+        return strategies
