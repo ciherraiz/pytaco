@@ -241,7 +241,6 @@ class TWAccount:
                 limit -= abs(value)/multiplier
 
         # SIDEWAYS¿?¿?
-
         return max_loss, max_profit, limit
 
     def _strategy_calculations(self):
@@ -316,33 +315,57 @@ class TWAccount:
         strategies['max_loss_max_profit'] = strategies['max_loss'] / strategies['max_profit']
         strategies['max_loss_pct'] = strategies['max_loss'] / self.account_size
         strategies['comfee_value'] = (strategies['commissions'] + strategies['fees']) / strategies['value']
-
         return strategies.reset_index()
 
     def closed_strategies(self):
-        closed = self.strategies[self.strategies['strategy_state']=='CLOSED'].copy()
-        closed['close_date'] = closed['close_datetime'].dt.tz_convert(tz=None) # remove tz info
-        closed['date_grp_w'] = closed['close_date'].dt.year.astype(str) + ' ' + closed['close_date'].dt.week.astype(str)
-        closed['close_date'] = closed['close_date'].dt.date # I can convert it because there aren't NA values
-        return closed
+        closed_s = self.strategies[self.strategies['strategy_state']=='CLOSED'].copy()
+        closed_s['close_date'] = closed_s['close_datetime'].dt.tz_convert(tz=None) # remove tz info
+        closed_s['date_grp_w'] = closed_s['close_date'].dt.year.astype(str) + ' ' + closed_s['close_date'].dt.week.astype(str)
+        closed_s['close_date'] = closed_s['close_date'].dt.date # I can convert it because there aren't NA values
+        return closed_s
 
     def closed_strategies_daily(self):
-        closed = self.closed_strategies()
-        min_date = closed['close_date'].min()
-        max_date = closed['close_date'].max()
+        closed_s = self.closed_strategies()
+        min_date = closed_s['close_date'].min()
+        max_date = closed_s['close_date'].max()
 
         idx = pd.date_range(start=min_date, end=max_date, normalize=True) # Daily index
-        closed_d=closed.copy().reset_index().set_index(['close_date']) # Set the date as index
-        closed_d = pd.merge(idx.to_series(name='date_idx'),closed_d, how='left', left_index=True, right_index=True)
-        closed_d['date_grp_w'] = closed_d['date_idx'].dt.year.astype(str) + ' ' + closed_d['date_idx'].dt.week.astype(str).str.pad(2,fillchar='0')
-        return closed_d
+        closed_s_d = closed_s.copy().reset_index().set_index(['close_date']) # Set the date as index
+        closed_s_d = pd.merge(idx.to_series(name='date_idx'),closed_s_d, how='left', left_index=True, right_index=True)
+        closed_s_d['date_grp_w'] = closed_s_d['date_idx'].dt.year.astype(str) + ' ' + closed_s_d['date_idx'].dt.week.astype(str).str.pad(2,fillchar='0')
+        return closed_s_d
 
     def open_strategies(self):
-        open = self.strategies[self.strategies['strategy_state']=='OPEN'].copy()
-        open['date_grp_m'] = open['expiration_date'].dt.year.astype(str) + ' ' + open['expiration_date'].dt.month.astype(str).str.pad(2,fillchar='0')
-        open['date_grp_w'] = open['expiration_date'].dt.year.astype(str) + ' ' + open['expiration_date'].dt.week.astype(str).str.pad(2,fillchar='0')
-        return open
+        open_s = self.strategies[self.strategies['strategy_state']=='OPEN'].copy()
+        open_s['date_grp_m'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.month.astype(str).str.pad(2,fillchar='0')
+        open_s['date_grp_w'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.week.astype(str).str.pad(2,fillchar='0')
+        return open_s
 
+    def closed_strategies_summary(self):
+        closed_s = self.closed_strategies()
+        total_return = closed_s[['result']].sum().squeeze()
+        total_positions = closed_s[['quantity']].sum().squeeze()
+        win_positions = closed_s[closed_s['result']>=0][['quantity']].sum().squeeze()
+        loss_positions = total_positions - win_positions
+        win_ratio = win_positions/total_positions
+        loss_ratio = loss_positions/total_positions
+        mean_result_win_positions = closed_s[closed_s['result']>=0][['result']].sum().squeeze() / win_positions
+        mean_result_loss_positions = closed_s[closed_s['result']<0][['result']].sum().squeeze() / loss_positions
+        expected_value = mean_result_win_positions * win_ratio + mean_result_loss_positions * loss_ratio
 
-
-
+        print(f'Total return: ${total_return:.0f}')
+        print(f'Total positions: {total_positions:.0f}')
+        print(f'Win positions: {win_positions:.0f}')
+        print(f'Loss positions: {loss_positions:.0f}')
+        print(f'Win ratio: {win_ratio:.2%}')
+        print(f'Loss ratio: {loss_ratio:.2%}')
+        print(f'Average win position result: ${mean_result_win_positions:.2f}')
+        print(f'Average loss position result: ${mean_result_loss_positions:.2f}')
+        print(f'Rate of return (RoR): {(total_return/self.account_size):.2%}')
+        print(f'Expected value: ${expected_value:.2f}')        
+    
+    def open_strategies_summary(self):
+        open_s = self.open_strategies()
+        total_positions = open_s[['quantity']].sum().squeeze()
+        
+        print(f'Total open positions: {total_positions:.0f}')

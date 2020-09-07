@@ -11,7 +11,5 @@ if f.exists():
 else:
     print("The file doesn't exist")
 
-print(len(tw.data))
-print(len(tw.trades))
-print(tw.closed_strategies_daily())
-print(tw.open_strategies())
+tw.closed_strategies_summary()
+tw.open_strategies_summary()
