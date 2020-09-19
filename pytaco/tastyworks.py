@@ -352,9 +352,13 @@ class TWAccount:
         mean_result_win_positions = closed_s[closed_s['result']>=0][['result']].sum().squeeze() / win_positions
         mean_result_loss_positions = closed_s[closed_s['result']<0][['result']].sum().squeeze() / loss_positions
         expected_value = mean_result_win_positions * win_ratio + mean_result_loss_positions * loss_ratio
+        mean_monthly_open_days = closed_s[closed_s['strategy_type']=='monthly']['days'].mean()
+        mean_weekly_open_days = closed_s[closed_s['strategy_type']=='weekly']['days'].mean()
 
         print(f'Total return: ${total_return:.0f}')
         print(f'Total positions: {total_positions:.0f}')
+        print(f'Mean open days (monthly): {mean_monthly_open_days:.0f}')
+        print(f'Mean open days (weekly): {mean_weekly_open_days:.0f}')
         print(f'Win positions: {win_positions:.0f}')
         print(f'Loss positions: {loss_positions:.0f}')
         print(f'Win ratio: {win_ratio:.2%}')
