@@ -1,15 +1,16 @@
 from collections import namedtuple
+import datetime
 from pathlib import Path
 import numpy as np
 import pandas as pd
 
 WEEKLY_THRESHOLD = 15
 STRATEGIES ={
-    'Credit Put Spread' : {'pattern': [('BUY', 'PUT'), ('SELL', 'PUT')],
+    'Put Credit Spread' : {'pattern': [('BUY', 'PUT'), ('SELL', 'PUT')],
                            'direction': 'UP', 
                            'weekly_max_positions': 0,
                            'monthly_max_positions': 0},
-    'Credit Call Spread' : {'pattern': [('SELL', 'CALL'), ('BUY', 'CALL')],
+    'Call Credit Spread' : {'pattern': [('SELL', 'CALL'), ('BUY', 'CALL')],
                            'direction': 'DOWN',
                            'weekly_max_positions': 0,
                            'monthly_max_positions': 0},
@@ -214,9 +215,12 @@ class TWAccount:
         multiplier = legs[0].multiplier
 
         max_profit = sum([l.value for l in legs])
+        value = sum([l.value for l in legs])
 
-        if strategy_name == 'Credit Put Spread' or strategy_name == 'Credit Call Spread':
+        if strategy_name == 'Put Credit Spread' or strategy_name == 'Call Credit Spread':
             max_loss = abs(legs[1].strike - legs[0].strike) * legs[0].quantity * multiplier
+            #print(strategy_name, value, max_loss, legs[0].quantity,  (max_loss-value)/legs[0].quantity)
+            max_loss -= value
         elif strategy_name == 'Short Iron Condor': 
             max_loss = (legs[1].strike - legs[0].strike) * legs[0].quantity * multiplier
         elif strategy_name == 'Short Put':
@@ -227,9 +231,8 @@ class TWAccount:
             max_loss = abs(legs[0].value)
             max_profit = np.nan
 
+ 
         strikes = [l.strike for l in legs]
-        value = sum([l.value for l in legs])
-
         if STRATEGIES[strategy_name]['direction'] == 'UP':
             limit = max(strikes)
             if strategy_name == 'Long Call':
@@ -341,8 +344,14 @@ class TWAccount:
         open_s['date_grp_w'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.week.astype(str).str.pad(2,fillchar='0')
         return open_s
 
-    def closed_strategies_summary(self):
+    def closed_strategies_summary(self, strategy_name, strategy_type, account_size, from_date):
         closed_s = self.closed_strategies()
+        closed_s = closed_s[(closed_s['strategy_name'] == strategy_name)
+                             & (closed_s['strategy_type']==strategy_type)
+                             & (closed_s['close_date']>=from_date)]
+
+        print(closed_s[['close_date', 'result', 'value', 'max_loss', 'quantity']])
+
         total_return = closed_s[['result']].sum().squeeze()
         total_positions = closed_s[['quantity']].sum().squeeze()
         win_positions = closed_s[closed_s['result']>=0][['quantity']].sum().squeeze()
@@ -350,23 +359,41 @@ class TWAccount:
         win_ratio = win_positions/total_positions
         loss_ratio = loss_positions/total_positions
         mean_result_win_positions = closed_s[closed_s['result']>=0][['result']].sum().squeeze() / win_positions
-        mean_result_loss_positions = closed_s[closed_s['result']<0][['result']].sum().squeeze() / loss_positions
-        expected_value = mean_result_win_positions * win_ratio + mean_result_loss_positions * loss_ratio
-        mean_monthly_open_days = closed_s[closed_s['strategy_type']=='monthly']['days'].mean()
-        mean_weekly_open_days = closed_s[closed_s['strategy_type']=='weekly']['days'].mean()
+        mean_max_loss = closed_s['max_loss'].sum().squeeze() / total_positions
+        mean_open_days = closed_s['days'].mean()
+        
+        if loss_positions:
+            mean_result_loss_positions = closed_s[closed_s['result']<0][['result']].sum().squeeze() / loss_positions
+        else:
+            mean_result_loss_positions = 0
 
+        win_return = mean_result_win_positions / mean_max_loss
+        loss_return = mean_result_loss_positions / mean_max_loss
+
+        expected_value = mean_result_win_positions * win_ratio + mean_result_loss_positions * loss_ratio
+        expected_return = win_return * win_ratio - loss_return * loss_ratio
+        annualized_expected_return = pow(expected_return + 1, 365/mean_open_days) - 1
+        portfolio_expected_return = expected_return * (mean_max_loss/account_size)
+        portfolio_annualized_expected_return = pow(portfolio_expected_return + 1, 365/mean_open_days) - 1
+
+        print(f'\n{strategy_type.capitalize()} {strategy_name} \n')
+        print(f'Account size ${account_size}')
         print(f'Total return: ${total_return:.0f}')
+        print(f'Rate of return (RoR): {(total_return/self.account_size):.2%}')
+        print(f'Average size position: ${mean_max_loss:.0f}')
+        print(f'Average open days: {mean_open_days:.0f}')
         print(f'Total positions: {total_positions:.0f}')
-        print(f'Mean open days (monthly): {mean_monthly_open_days:.0f}')
-        print(f'Mean open days (weekly): {mean_weekly_open_days:.0f}')
         print(f'Win positions: {win_positions:.0f}')
         print(f'Loss positions: {loss_positions:.0f}')
         print(f'Win ratio: {win_ratio:.2%}')
         print(f'Loss ratio: {loss_ratio:.2%}')
         print(f'Average win position result: ${mean_result_win_positions:.2f}')
         print(f'Average loss position result: ${mean_result_loss_positions:.2f}')
-        print(f'Rate of return (RoR): {(total_return/self.account_size):.2%}')
-        print(f'Expected value: ${expected_value:.2f}')        
+        print(f'\nExpected value: ${expected_value:.2f}')
+        print(f'Expected return: {expected_return:.2%}')
+        print(f'Annualized expected return: {annualized_expected_return:.2%}')
+        print(f'Portfolio expected return: {portfolio_expected_return:.2%}')      
+        print(f'Portfolio annualized expected return: {portfolio_annualized_expected_return:.2%}')    
     
     def open_strategies_summary(self):
         open_s = self.open_strategies()
