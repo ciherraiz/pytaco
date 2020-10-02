@@ -15,7 +15,8 @@ else:
 tw.closed_strategies_summary(strategy_name='Put Credit Spread', 
                             strategy_type='monthly',
                             account_size=10000,
-                            from_date=datetime(2020,1,1).date())
+                            from_date=datetime(2020,1,1).date(),
+                            verbose=True)
 
 tw.closed_strategies_summary(strategy_name='Put Credit Spread', 
                             strategy_type='weekly',

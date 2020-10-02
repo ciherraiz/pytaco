@@ -344,13 +344,14 @@ class TWAccount:
         open_s['date_grp_w'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.week.astype(str).str.pad(2,fillchar='0')
         return open_s
 
-    def closed_strategies_summary(self, strategy_name, strategy_type, account_size, from_date):
+    def closed_strategies_summary(self, strategy_name, strategy_type, account_size, from_date, verbose=False):
         closed_s = self.closed_strategies()
         closed_s = closed_s[(closed_s['strategy_name'] == strategy_name)
                              & (closed_s['strategy_type']==strategy_type)
                              & (closed_s['close_date']>=from_date)]
 
-        print(closed_s[['close_date', 'result', 'value', 'max_loss', 'quantity']])
+        if verbose:
+            print(closed_s[['underlying', 'close_date', 'result', 'value', 'max_loss', 'quantity']])
 
         total_return = closed_s[['result']].sum().squeeze()
         total_positions = closed_s[['quantity']].sum().squeeze()
