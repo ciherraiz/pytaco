@@ -335,13 +335,13 @@ class TWAccount:
         idx = pd.date_range(start=min_date, end=max_date, normalize=True) # Daily index
         closed_s_d = closed_s.copy().reset_index().set_index(['close_date']) # Set the date as index
         closed_s_d = pd.merge(idx.to_series(name='date_idx'),closed_s_d, how='left', left_index=True, right_index=True)
-        closed_s_d['date_grp_w'] = closed_s_d['date_idx'].dt.year.astype(str) + ' ' + closed_s_d['date_idx'].dt.week.astype(str).str.pad(2,fillchar='0')
+        closed_s_d['date_grp_w'] = closed_s_d['date_idx'].dt.year.astype(str) + ' ' + closed_s_d['date_idx'].dt.isocalendar().week.astype(str).str.pad(2,fillchar='0')
         return closed_s_d
 
     def open_strategies(self):
         open_s = self.strategies[self.strategies['strategy_state']=='OPEN'].copy()
         open_s['date_grp_m'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.month.astype(str).str.pad(2,fillchar='0')
-        open_s['date_grp_w'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.week.astype(str).str.pad(2,fillchar='0')
+        open_s['date_grp_w'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.week.isocalendar().astype(str).str.pad(2,fillchar='0')
         return open_s
 
     def closed_strategies_summary(self, strategy_name, strategy_type, account_size, from_date, verbose=False):
