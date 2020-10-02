@@ -323,7 +323,7 @@ class TWAccount:
     def closed_strategies(self):
         closed_s = self.strategies[self.strategies['strategy_state']=='CLOSED'].copy()
         closed_s['close_date'] = closed_s['close_datetime'].dt.tz_convert(tz=None) # remove tz info
-        closed_s['date_grp_w'] = closed_s['close_date'].dt.year.astype(str) + ' ' + closed_s['close_date'].dt.week.astype(str)
+        closed_s['date_grp_w'] = closed_s['close_date'].dt.year.astype(str) + ' ' + closed_s['close_date'].dt.isocalendar().week.astype(str)
         closed_s['close_date'] = closed_s['close_date'].dt.date # I can convert it because there aren't NA values
         return closed_s
 
