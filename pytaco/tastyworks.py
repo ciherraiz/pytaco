@@ -351,7 +351,7 @@ class TWAccount:
                              & (closed_s['close_date']>=from_date)]
 
         if verbose:
-            print(closed_s[['underlying', 'close_date', 'result', 'value', 'max_loss', 'quantity']])
+            print(closed_s[['close_date', 'underlying', 'result', 'value', 'max_loss', 'quantity']].sort_values(by=['close_date', 'underlying']))
 
         total_return = closed_s[['result']].sum().squeeze()
         total_positions = closed_s[['quantity']].sum().squeeze()
