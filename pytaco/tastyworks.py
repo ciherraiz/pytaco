@@ -341,7 +341,7 @@ class TWAccount:
     def open_strategies(self):
         open_s = self.strategies[self.strategies['strategy_state']=='OPEN'].copy()
         open_s['date_grp_m'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.month.astype(str).str.pad(2,fillchar='0')
-        open_s['date_grp_w'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.week.isocalendar().astype(str).str.pad(2,fillchar='0')
+        open_s['date_grp_w'] = open_s['expiration_date'].dt.year.astype(str) + ' ' + open_s['expiration_date'].dt.isocalendar().week.astype(str).str.pad(2,fillchar='0')
         return open_s
 
     def closed_strategies_summary(self, strategy_name, strategy_type, account_size, from_date, verbose=False):
