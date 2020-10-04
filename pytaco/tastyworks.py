@@ -372,7 +372,7 @@ class TWAccount:
         loss_return = mean_result_loss_positions / mean_max_loss
 
         expected_value = mean_result_win_positions * win_ratio + mean_result_loss_positions * loss_ratio
-        expected_return = win_return * win_ratio - loss_return * loss_ratio
+        expected_return = win_return * win_ratio - abs(loss_return) * loss_ratio
         annualized_expected_return = pow(expected_return + 1, 365/mean_open_days) - 1
         portfolio_expected_return = expected_return * (mean_max_loss/account_size)
         portfolio_annualized_expected_return = pow(portfolio_expected_return + 1, 365/mean_open_days) - 1
