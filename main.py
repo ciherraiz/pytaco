@@ -12,24 +12,13 @@ else:
     print("The file doesn't exist")
 
 
-tw.closed_strategies_summary(strategy_name='Put Credit Spread', 
-                            strategy_type='monthly',
-                            account_size=10000,
-                            from_date=datetime(2020,1,1).date(),
-                            verbose=True)
+closed_strategies = tw.closed_strategies()
+print(closed_strategies[['strategy_id', 'underlying', 'strategy_name', 'result', 'quantity', 'strategy_type', 'result_day_position', 'close_date']].sort_values(by='close_date'))
 
-tw.closed_strategies_summary(strategy_name='Put Credit Spread', 
-                            strategy_type='weekly',
-                            account_size=10000,
-                            from_date=datetime(2020,1,1).date())
 
-tw.closed_strategies_summary(strategy_name='Call Credit Spread', 
-                            strategy_type='monthly',
-                            account_size=10000,
-                            from_date=datetime(2020,1,1).date())
 
-tw.closed_strategies_summary(strategy_name='Call Credit Spread', 
-                            strategy_type='weekly',
-                            account_size=10000,
-                            from_date=datetime(2020,1,1).date())
-#tw.open_strategies_summary()
+#tw.closed_strategies_summary(strategy_name='Put Credit Spread', 
+#                            strategy_type='monthly',
+#                            account_size=10000,
+#                            from_date=datetime(2020,1,1).date(),
+#                            verbose=True)
