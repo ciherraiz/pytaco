@@ -158,6 +158,7 @@ class TWAccount:
 
     def _link_by_strategy(self):
         current_date = None
+        current_symbol = None
         current_id = None
         strategy_actions = {}
         position_actions = {}
@@ -168,8 +169,9 @@ class TWAccount:
             if row['Open or Close']=='OPEN': 
                 # The first action in this trade is open a position -> new strategy
                 # It's important to sort the trades by CLOSE-OPEN order
-                if current_date != row['Date']:
+                if (current_date != row['Date']) and (current_symbol != row['Symbol']):
                     current_date = row['Date']
+                    current_symbol = row['Symbol']
                     last_id += 1
                     current_id = last_id
 
@@ -177,11 +179,12 @@ class TWAccount:
                                                                 position_actions,
                                                                 strategy_actions,
                                                                 current_id)
-            else: 
+            else: # CLOSE
                 # It's a new action of same trade
                 # If the first action is a CLOSE, it's a adjustment probably
-                if current_date != row['Date']:
+                if current_date != row['Date'] and (current_symbol != row['Symbol']:
                     current_date = row['Date']
+                    current_symbol = row['Symbol']
                     for a in reversed(position_actions[row['Symbol']]):
                         # Search the strategy for this close action
                         if row['Quantity'] == a.quantity:
