@@ -182,7 +182,7 @@ class TWAccount:
             else: # CLOSE
                 # It's a new action of same trade
                 # If the first action is a CLOSE, it's a adjustment probably
-                if current_date != row['Date'] and (current_symbol != row['Symbol']:
+                if current_date != row['Date'] and (current_symbol != row['Symbol']):
                     current_date = row['Date']
                     current_symbol = row['Symbol']
                     for a in reversed(position_actions[row['Symbol']]):
