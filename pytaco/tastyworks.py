@@ -182,7 +182,7 @@ class TWAccount:
             else: # CLOSE
                 # It's a new action of same trade
                 # If the first action is a CLOSE, it's a adjustment probably
-                if (current_date != row['Date']) and (current_under != row['Underlying Symbol']):
+                if (current_date != row['Date']) or (current_under != row['Underlying Symbol']):
                     current_date = row['Date']
                     current_under = row['Underlying Symbol']
                     for a in reversed(position_actions[row['Symbol']]):
@@ -191,8 +191,9 @@ class TWAccount:
                             # We assume that a trade only contains one strategy
                             current_id = a.strategy_id
                             break
-                            
-                strategy_actions, position_actions = self._add_action(row, 
+
+                if 1 == 1:            
+                    strategy_actions, position_actions = self._add_action(row, 
                                                                     position_actions, 
                                                                     strategy_actions, 
                                                                     current_id)
