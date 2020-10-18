@@ -158,7 +158,7 @@ class TWAccount:
 
     def _link_by_strategy(self):
         current_date = None
-        current_symbol = None
+        current_under = None
         current_id = None
         strategy_actions = {}
         position_actions = {}
@@ -169,9 +169,9 @@ class TWAccount:
             if row['Open or Close']=='OPEN': 
                 # The first action in this trade is open a position -> new strategy
                 # It's important to sort the trades by CLOSE-OPEN order
-                if (current_date != row['Date']) and (current_symbol != row['Symbol']):
+                if (current_date != row['Date']):
                     current_date = row['Date']
-                    current_symbol = row['Symbol']
+                    current_under = row['Underlying Symbol']
                     last_id += 1
                     current_id = last_id
 
@@ -182,9 +182,9 @@ class TWAccount:
             else: # CLOSE
                 # It's a new action of same trade
                 # If the first action is a CLOSE, it's a adjustment probably
-                if current_date != row['Date'] and (current_symbol != row['Symbol']):
+                if (current_date != row['Date']) and (current_under != row['Underlying Symbol']):
                     current_date = row['Date']
-                    current_symbol = row['Symbol']
+                    current_under = row['Underlying Symbol']
                     for a in reversed(position_actions[row['Symbol']]):
                         # Search the strategy for this close action
                         if row['Quantity'] == a.quantity:
@@ -199,7 +199,8 @@ class TWAccount:
 
         actions = [a for a in strategy_actions.values()]
         actions = [y for x in actions for y in x ] #flattened
-        return pd.DataFrame.from_records(actions, columns=Action._fields).sort_values(by=['strategy_id', 'date', 'open_close', 'strike'])
+        df = pd.DataFrame.from_records(actions, columns=Action._fields).sort_values(by=['strategy_id', 'date', 'open_close', 'strike'])
+        return df
 
 
     def _strategy_pattern(self, legs, dte):
