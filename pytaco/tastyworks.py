@@ -67,6 +67,9 @@ class TWAccount:
         self.data['Date'] = pd.to_datetime(self.data['Date'], utc=True)
         self.data['Expiration Date'] = pd.to_datetime(self.data['Expiration Date'])
 
+        self.data['Commissions'].replace('--', 0, inplace=True)
+        self.data['Commissions'] = self.data['Commissions'].astype(float)
+
         self.account_size = self.data[self.data['Description']=='Wire Funds Received']['Value'].sum().squeeze()
 
         self.trades = self._to_trades()
