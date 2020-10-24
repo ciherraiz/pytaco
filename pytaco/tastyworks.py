@@ -191,9 +191,8 @@ class TWAccount:
                             # We assume that a trade only contains one strategy
                             current_id = a.strategy_id
                             break
-
-                if 1 == 1:            
-                    strategy_actions, position_actions = self._add_action(row, 
+      
+                strategy_actions, position_actions = self._add_action(row, 
                                                                     position_actions, 
                                                                     strategy_actions, 
                                                                     current_id)
@@ -258,12 +257,14 @@ class TWAccount:
         strategies = self.trades.copy()       
         for _, strategy_trades in self.trades.groupby(['strategy_id']):
             open_legs = []
-            strategy_closed = False
             strategy_created = False
             dte = None
+            open_positions = 0
+            closed_positions = 0
 
             for _, row in strategy_trades.iterrows():
-                if (row['open_close']=='OPEN'): 
+                if (row['open_close']=='OPEN'):
+                    open_positions += 1 
                     if strategy_created == False:
                         leg = Leg(buy_sell=row['buy_sell'],
                                 call_put=row['call_put'],
@@ -278,13 +279,15 @@ class TWAccount:
                         # days to expiration
                         dte = (row['expiration'].date() - row['date'].date()).days + 1
                         strategy_type = 'weekly' if dte < WEEKLY_THRESHOLD else 'monthly'
-                        strategy_closed = False
-                    else:
-                        # reopen the trade state by a adjustment o roll
-                        strategy_closed = False
+
                 else:
+                    closed_positions += 1
                     strategy_created = True
-                    strategy_closed = True
+
+            if closed_positions == open_positions:
+                strategy_closed = True
+            else:
+                strategy_closed = False
 
             name = self._strategy_pattern(open_legs, dte)
             max_loss, max_profit, limit = self._strategy_measures(name, open_legs)
