@@ -79,7 +79,7 @@ class TWAccount:
 
     def _to_trades(self):
         # select trade rows
-        trades = self.data[(self.data['Type']=='Trade') | (self.data['Type']=='Receive Deliver')].sort_values(by=['Date', 'Strike Price'])
+        trades = self.data[(self.data['Type']=='Trade') | ((self.data['Type']=='Receive Deliver') & (self.data['Instrument Type']=='Equity Option'))].sort_values(by=['Date', 'Strike Price'])
         
         # Trade type
         trades.loc[trades['Type'] == 'Trade', 'Type'] = 'TRADE'
