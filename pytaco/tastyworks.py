@@ -89,11 +89,25 @@ class TWAccount:
         trades.loc[trades['Type'] == 'Trade', 'Type'] = 'TRADE'
         trades.loc[trades['Description'].str.contains('Forward split'), 'Type'] = 'FORWARD SPLIT'
         trades.loc[trades['Description'].str.contains('expiration'), 'Type'] = 'EXPIRATION'
+        trades.loc[trades['Description'].str.contains('assignment'), 'Type'] = 'ASSIGNMENT'
+        trades.loc[trades['Description'].str.contains('Cash settlement'), 'Type'] = 'SETTLEMENT'
         
         # Expiration
         trades.loc[trades['Type']=='EXPIRATION', 'Action'] = 'EXP'
         trades.loc[trades['Type']=='EXPIRATION', 'Buy or Sell'] = 'EXP'
         trades.loc[trades['Type']=='EXPIRATION', 'Open or Close'] = 'CLOSE'
+
+        # Assignment
+        trades.loc[trades['Type']=='ASSIGNMENT', 'Action'] = 'ASS'
+        trades.loc[trades['Type']=='ASSIGNMENT', 'Buy or Sell'] = 'ASS'
+        trades.loc[trades['Type']=='ASSIGNMENT', 'Open or Close'] = 'CLOSE'
+
+        # Cash Settlement
+        trades.loc[trades['Type']=='SETTLEMENT', 'Action'] = 'SET'
+        trades.loc[trades['Type']=='SETTLEMENT', 'Buy or Sell'] = 'SET'
+        trades.loc[trades['Type']=='SETTLEMENT', 'Open or Close'] = 'CLOSE'
+
+
 
         # Other type trades
         trades.loc[((trades['Action']=='BUY_TO_OPEN') | (trades['Action']=='BUY_TO_CLOSE')), 'Buy or Sell'] = 'BUY'
@@ -108,7 +122,7 @@ class TWAccount:
 
         trades.fillna(value=0, inplace=True)
 
-        #trades.to_csv('trades_prev.csv')
+        #trades.to_csv('data/trades_prev.csv')
 
         # Sum all trades of same order
         """
@@ -134,7 +148,7 @@ class TWAccount:
 """
         trades = trades.sort_values(by=['Date', 'Open or Close', 'Strike Price', 'Call or Put'], ascending=[True, True, True, False])
         
-        #trades.to_csv('trades.csv')
+        #trades.to_csv('data/trades.csv')
     
         return trades
 
@@ -293,8 +307,9 @@ class TWAccount:
                         strategy_type = 'weekly' if dte < WEEKLY_THRESHOLD else 'monthly'
 
                 else:
-                    closed_positions += 1
-                    strategy_created = True
+                    if row['buy_sell']!='SET':
+                        closed_positions += 1
+                        strategy_created = True
 
             if closed_positions == open_positions:
                 strategy_closed = True
