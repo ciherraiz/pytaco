@@ -108,7 +108,10 @@ class TWAccount:
 
         trades.fillna(value=0, inplace=True)
 
+        #trades.to_csv('trades_prev.csv')
+
         # Sum all trades of same order
+        """
         trades = trades.groupby([
                             'Type',
                             'Action',
@@ -127,8 +130,12 @@ class TWAccount:
                                 Commissions=('Commissions', np.sum),
                                 Fees=('Fees', np.sum))\
                             .reset_index()\
-                            .sort_values(by=['Date', 'Open or Close', 'Strike Price'])
+                            .sort_values(by=['Date', 'Open or Close', 'Strike Price', 'Call or Put'], ascending=[True, True, True, False])
+"""
+        trades = trades.sort_values(by=['Date', 'Open or Close', 'Strike Price', 'Call or Put'], ascending=[True, True, True, False])
         
+        #trades.to_csv('trades.csv')
+    
         return trades
 
     def _add_action(self, row, positions, strategies, id):
@@ -170,6 +177,7 @@ class TWAccount:
         last_id = 0
 
         for _, row in self.trades.iterrows():
+
             if row['Open or Close']=='OPEN': 
                 # The first action in this trade is open a position -> new strategy
                 # It's important to sort the trades by CLOSE-OPEN order
@@ -195,7 +203,7 @@ class TWAccount:
                             # We assume that a trade only contains one strategy
                             current_id = a.strategy_id
                             break
-      
+
                 strategy_actions, position_actions = self._add_action(row, 
                                                                     position_actions, 
                                                                     strategy_actions, 
@@ -203,7 +211,7 @@ class TWAccount:
 
         actions = [a for a in strategy_actions.values()]
         actions = [y for x in actions for y in x ] #flattened
-        df = pd.DataFrame.from_records(actions, columns=Action._fields).sort_values(by=['strategy_id', 'date', 'open_close', 'strike'])
+        df = pd.DataFrame.from_records(actions, columns=Action._fields).sort_values(by=['strategy_id', 'date', 'open_close', 'strike', 'call_put'], ascending=[True, True, True, True, False])
         return df
 
 
